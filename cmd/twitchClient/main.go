@@ -184,11 +184,16 @@ var appCommands = []cli.Command{
 		Name:  "streams",
 		Usage: "print one or more channel's active streams",
 		Action: func(c *cli.Context) error {
-			if c.NArg() < 1 {
-				return cli.NewExitError("must supply at least one channel ID", 126)
+			channels := []string{}
+			if c.NArg() > 0 {
+				channels = append([]string{c.Args().First()}, c.Args().Tail()...)
 			}
 
-			streams, err := twitchClient.GetStreamsForIDs(nil, append([]string{c.Args().First()}, c.Args().Tail()...)...)
+			opts := &twitch.RequestOptions{}
+			opts.Extra = &url.Values{}
+			opts.Extra.Add("first", "100")
+
+			streams, err := twitchClient.GetStreamsForIDs(opts, channels...)
 			if err != nil {
 				return err
 			}
@@ -213,6 +218,25 @@ var appCommands = []cli.Command{
 			}
 
 			pp.Println(videos)
+
+			return nil
+		},
+	},
+
+	{
+		Name:  "users",
+		Usage: "print one or more user's info",
+		Action: func(c *cli.Context) error {
+			if c.NArg() < 1 {
+				return cli.NewExitError("must supply a channel name", 126)
+			}
+
+			users, err := twitchClient.GetUsers([]string{}, append([]string{c.Args().First()}, c.Args().Tail()...))
+			if err != nil {
+				return err
+			}
+
+			pp.Println(users)
 
 			return nil
 		},
